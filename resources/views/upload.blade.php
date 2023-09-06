@@ -5,6 +5,7 @@
 <head>
   <!-- Required meta tags -->
   <meta charset="utf-8">
+  <base href="/public">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Document Management System</title>
   <!-- base:css -->
@@ -69,8 +70,8 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="/">
-            <button class="btn bg-danger btn-sm menu-title"><i class="mdi mdi-plus-circle-outline"></i>  Upload Files</button>
+          <a class="nav-link" href="{{route('posts.create')}}">
+            <button class="btn bg-danger btn-sm menu-title"><i class="mdi mdi-upload"></i>  Upload Files</button>
           </a>
         </li>
 
@@ -78,38 +79,45 @@
           <p>Documents</p>
           <span></span>
         </li>
-        @foreach ($file as $files)
+        @foreach($posts as $post)
+        @if($post->hasMedia('docs'))
         <li class="nav-item ">
           <div class="position-relative">
             <a class="nav-link custom-dropdown-toggle" href="#" role="button" id="fileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="flex-grow: 1;">
                         <i class="mdi mdi-file-document-box-outline menu-icon"></i>
-                        <span class="menu-title">{{ $files->fileName }}</span>
+                        <span class="menu-title">{{ pathinfo($post->getFirstMedia('docs')->file_name, PATHINFO_FILENAME) }}</span>
                     </div>
                     <span style="font-size: 20px; color: #999;">...</span>
                 </div>
             </a>
-            <div class="dropdown-menu dropdown-menu-right d-none custom-dropdown-content" aria-labelledby="fileDropdown{{ $files->id }}">
+            <div class="dropdown-menu dropdown-menu-right d-none custom-dropdown-content" aria-labelledby="fileDropdown{{ $post->id }}">
                     <div class="dropdown-item">
-                        Path: {{ $files->path }}
+                        Path: {{$post->getFirstMediaUrl('docs')}}
                     </div>
                     <div class="dropdown-item">
-                        Size: {{ $files->size }} bytes
+                        Size: {{ formatBytes($post->getFirstMedia('docs')->size) }}
                     </div>
                     <div class="dropdown-item">
-                      Date: {{ $files->created_at->format('Y-m-d H:i:s') }}
+                      Date: {{ $post->getFirstMedia('docs')->created_at->format('Y-m-d H:i:s') }}
                   </div>
                     <!-- Add more file details here as needed -->
     
                     <div class="dropdown-divider"></div>
                     <div class="link-container">
-                      <a class="dropdown-item" href="{{ url('showDoc',['id' => $files->id]) }}">Open File</a>
-                      <a  onclick="return confirm('Are you sure to delete this document?')" class="dropdown-item btn btn-danger" href="{{url('delete_file',$files->id)}}">Delete File</a> 
+                      <a class="dropdown-item" href="{{route('posts.show', $post->id)}}">Open File</a>
+                      {{-- <a  onclick="return confirm('Are you sure to delete this document?')" class="dropdown-item btn btn-danger" href="{{route('posts.destroy', $post->id)}}">Delete File</a>  --}}
+                      <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn">Delete</button>
+                        </form>
                       </div>
                 </div>
             </div>
         </li>
+        @endif
     @endforeach
         <li class="nav-item">
           <a class="nav-link" data-toggle="collapse" href="/" aria-expanded="false" aria-controls="auth">
@@ -157,7 +165,8 @@
           <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1"></h4>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item">
-              <h4 class="mb-0 font-weight-bold d-none d-xl-block">August 22, 2023</h4>
+              <h4 class="mb-0 font-weight-bold d-none d-xl-block">{{ date('F j, Y') }}</h4>
+
             </li>
             <li class="nav-item dropdown mr-1">
               <a class="nav-link count-indicator dropdown-toggle d-flex justify-content-center align-items-center" id="messageDropdown" href="/" data-toggle="dropdown">
@@ -260,10 +269,60 @@
         <div class="navbar-menu-wrapper navbar-search-wrapper d-none d-lg-flex align-items-center">
           <ul class="navbar-nav mr-lg-2">
             <li class="nav-item nav-search d-none d-lg-block">
-              <div class="input-group">
+              {{-- <div class="input-group">
                 <input type="text" class="form-control" placeholder="Search Here..." aria-label="search" aria-describedby="search">
-              </div>
-            </li>
+              </div> --}}
+              <form action="{{ route('search') }}" method="GET">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Search here" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit"><i class="mdi mdi-file-find" style="font-size: 20px"></i></button>
+                    </div>
+                </div>
+            </form>
+            <div class="bg-primary">
+            @if (session()->has('search_results'))
+            @php
+                $results = session('search_results');
+                session()->forget('search_results');
+            @endphp
+ 
+ 
+  <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
+    <i class="mdi mdi-file-find menu-icon"></i>
+    <span class="menu-title">Search Results: {{ request()->input('q') }}</span>
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="auth">
+    <ul class="nav flex-column sub-menu">
+      @foreach ($results['fileNameResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
+      @endforeach
+     
+      @foreach ($results['docxResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+     @endforeach
+     
+     @foreach ($results['xlsxResults'] as $result)
+     <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
+    @endforeach
+
+      @foreach ($results['pptxResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
+        @endforeach
+     
+        @foreach ($results['txtResults'] as $result)
+        <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+    @endforeach
+      
+    @foreach ($results['pdfResults'] as $result)
+    <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+@endforeach
+    </ul>
+  </div>
+
+@endif
+            </div>      </li>
           </ul>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item nav-profile dropdown">
@@ -318,7 +377,7 @@
                 <div class="card-body">
                     
                     @if(session()->has('message'))
-                    <div class="alert alert-success">
+                    <div class="alert alert-success mdi mdi-check-circle-outline">
                       <button type="button" class="close" data-dismiss="alert">
                         x
                       </button>
@@ -326,11 +385,11 @@
                     </div>
                     @endif
 
-                    <form class="forms-sample" method="POST" action="{{url('upload_doc')}}" enctype="multipart/form-data" >
+                    <form class="forms-sample" method="POST" action="{{route('posts.store')}}" enctype="multipart/form-data" >
                         @csrf
 
                       <div class="form-group">
-                        <input type="file" class="form-control" id="path" name="path[]" placeholder="path"  multiple required>
+                        <input type="file" class="form-control" id="path" name="file" placeholder="file"  required>
                       </div>
                       
                       <button type="submit" class="btn btn-primary mr-2">Upload</button>

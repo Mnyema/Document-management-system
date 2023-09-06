@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,13 +17,31 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+
+
+//  Route::post('/store', [PostController::class, 'store']);
+//  Route::get('/create', [PostController::class, 'create']);
+
+//Route::get('/downloads/{id}', [PostController::class, 'downloads']);
+
+//Route::get('/download/{id}', [PostController::class, 'download'])->name('posts.download');
+
+
+Route::get('/download/{id}', [HomeController::class, 'download'])->name('download');
+
+Route::resource('/posts', PostController::class);
+
+Route::get('/search', [HomeController::class, 'search'])->name('search');
+
+Route::get('/', [HomeController::class, 'index']);
+
+Route::get('/welcome', [HomeController::class, 'index']);
 
 Route::get('/upload', [HomeController::class, 'upload']);
 
-Route::get('/', [HomeController::class, 'index']);
+
+
+
 
 Route::post('/upload_doc',[HomeController::class, 'store']);
 
@@ -31,11 +50,11 @@ Route::get('/showDoc/{id}', [DocumentController::class, 'showDoc']);
 Route::get('/document/show/{id}', [DocumentController::class, 'showDoc'])->name('document.show');
 
 
-Route::get('/download/{id}', [DocumentController::class, 'download']);
+//Route::get('/download/{id}', [DocumentController::class, 'download']);
 
-Route::get('/download/{id}/{timestamp}', [DocumentController::class, 'download'])->name('document.download');
+//Route::get('/download/{id}/{timestamp}', [DocumentController::class, 'download'])->name('document.download');
 
-Route::get('/download/{id}/{hash}', [DocumentController::class, 'download'])->name('document.download');
+//Route::get('/download/{id}/{hash}', [DocumentController::class, 'download'])->name('document.download');
 
 
 

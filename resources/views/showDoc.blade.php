@@ -76,8 +76,8 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="{{url('upload')}}">
-            <button class="btn bg-danger btn-sm menu-title"><i class="mdi mdi-plus-circle-outline"></i>  Upload Files</button>
+          <a class="nav-link" href="{{route('posts.create')}}">
+            <button class="btn bg-danger btn-sm menu-title"><i class="mdi mdi-upload"></i>  Upload Files</button>
           </a>
         </li>
 
@@ -86,39 +86,48 @@
           <p>Documents</p>
           <span></span>
         </li>
-        @foreach ($file as $files)
+        @foreach($posts as $post)
+        @if($post->hasMedia('docs'))
+            @php
+               $media = $post->getFirstMedia('docs');
+            @endphp
                 <li class="nav-item ">
           <div class="position-relative">
             <a class="nav-link custom-dropdown-toggle" href="#" role="button" id="fileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="flex-grow: 1;">
                         <i class="mdi mdi-file-document-box-outline menu-icon"></i>
-                        <span class="menu-title">{{ $files->fileName }}</span>
+                        <span class="menu-title">{{ pathinfo($post->getFirstMedia('docs')->file_name, PATHINFO_FILENAME) }}</span>
                     </div>
                     <span style="font-size: 20px; color: #999;">...</span>
                 </div>
             </a>
-            <div class="dropdown-menu dropdown-menu-right d-none custom-dropdown-content" aria-labelledby="fileDropdown{{$files->id}}">
+            <div class="dropdown-menu dropdown-menu-right d-none custom-dropdown-content" aria-labelledby="fileDropdown{{$post->id}}">
                     <div class="dropdown-item">
-                        Path: {{ $files->path }}
+                        Path: {{$post->getFirstMediaUrl('docs')}}
                     </div>
                     <div class="dropdown-item">
-                        Size: {{ $files->size }} bytes
+                        Size: {{ formatBytes($post->getFirstMedia('docs')->size) }}
                     </div>
                     <div class="dropdown-item">
-                      Date: {{ $files->created_at->format('Y-m-d H:i:s') }}
+                      Date: {{ $post->getFirstMedia('docs')->created_at->format('Y-m-d H:i:s') }}
                   </div>
                     <!-- Add more file details here as needed -->
     
                     <div class="dropdown-divider"></div>
                     <div class="link-container">
-                    <a class="dropdown-item" href="{{url('showDoc',['id' => $files->id]) }}">Open File</a>
+                    <a class="dropdown-item" href="{{route('posts.show', $post->id)}}">Open File</a>
                     {{-- href="{{ asset($files->path) }}" --}}
-                    <a  onclick="return confirm('Are you sure to delete this document?')" class="dropdown-item btn btn-danger" href="{{url('delete_file',$files->id)}}">Delete File</a>
+                    <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn">Delete</button>
+                      </form>
                     </div>
                 </div>
             </div>
         </li>
+        @endif
     @endforeach
     
         
@@ -174,7 +183,7 @@
           <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1"></h4>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item">
-              <h4 class="mb-0 font-weight-bold d-none d-xl-block">August 22, 2023</h4>
+              <h4 class="mb-0 font-weight-bold d-none d-xl-block">{{ date('F j, Y') }}</h4>
             </li>
             <li class="nav-item dropdown mr-1">
               <a class="nav-link count-indicator dropdown-toggle d-flex justify-content-center align-items-center" id="messageDropdown" href="/" data-toggle="dropdown">
@@ -277,10 +286,61 @@
         <div class="navbar-menu-wrapper navbar-search-wrapper d-none d-lg-flex align-items-center">
           <ul class="navbar-nav mr-lg-2">
             <li class="nav-item nav-search d-none d-lg-block">
-              <div class="input-group">
+              {{-- <div class="input-group">
                 <input type="text" class="form-control" placeholder="Search Here..." aria-label="search" aria-describedby="search">
-              </div>
-            </li>
+              </div> --}}
+              <form action="{{ route('search') }}" method="GET">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Search here" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit"><i class="mdi mdi-file-find" style="font-size: 20px"></i></button>
+                    </div>
+                </div>
+            </form>
+            <div class="bg-primary" style="position:absolute; z-index:9999">
+            @if (session()->has('search_results'))
+            @php
+                $results = session('search_results');
+                session()->forget('search_results');
+            @endphp
+ 
+ 
+  <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
+    <i class="mdi mdi-file-find menu-icon"></i>
+    <span class="menu-title">Search Results: {{ request()->input('q') }}</span>
+    <i class="menu-arrow"></i>
+  </a>
+  <div class="collapse" id="auth">
+    <ul class="nav flex-column sub-menu">
+      @foreach ($results['fileNameResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
+      @endforeach
+     
+      @foreach ($results['docxResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+     @endforeach
+     
+     @foreach ($results['xlsxResults'] as $result)
+     <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
+    @endforeach
+
+      @foreach ($results['pptxResults'] as $result)
+      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
+        @endforeach
+     
+        @foreach ($results['txtResults'] as $result)
+        <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+    @endforeach
+      
+    @foreach ($results['pdfResults'] as $result)
+    <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+@endforeach
+    </ul>
+  </div>
+ {{-- @else 
+ <li class="nav-item">No result</li> --}}
+@endif
+            </div>      </li>
           </ul>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item nav-profile dropdown">
@@ -330,7 +390,7 @@
       <div class="main-panel">
         <div class="content-wrapper">
           @if(session()->has('message'))
-                    <div class="alert alert-success">
+                    <div class="alert alert-success mdi mdi-check-circle-outline">
                       <button type="button" class="close" data-dismiss="alert">
                         x
                       </button>
@@ -343,22 +403,43 @@
               <div class="card">
                 <div class="card-body">
                   <div class="divide" style="display: flex; align-items: center;">
-                    <h4 class="card-title f-6" style="flex: 3;">{{$selected->fileName}}</h4>
+                    <i class="mdi mdi-book-open-page-variant" style="margin-right: 10px;"></i>
+                    <h4 class="card-title f-6" style="flex: 3;">{{ pathinfo($data['media']->file_name, PATHINFO_FILENAME) }}</h4>
                     <div style="flex: 1; display: flex; justify-content: flex-end;">
-                      <a class="btn btn-info f-2" style="margin-left: 10px;" href="{{ url('document.download', ['id' => $files->id, 'hash' => md5($files->id . time())]) }}">Download</a>
+                      <a class="btn btn-info f-2" style="margin-left: 10px;" href="{{ route('download',  ['id' => $data['media']->id])}}"><i class="mdi mdi-arrow-down-bold-circle"></i></a>
 
+                      <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
+                        @csrf
+                        @method('DELETE')
+                         
+                        <button type="submit" style=" width:auto; height:auto; align-items:center; background-color:red;" class=" "  >
+                          <i class="mdi mdi-delete input-group-append" style="font-size: 40px; color:white; margin-right:5%; margin-left:2px; margin-bottom:0%"></i> 
+                        </button>
+                        </form>
 
-
-                        <a onclick="return confirm('Are you sure to delete this document?')" class="btn btn-danger f-2" style="margin-left: 10px;" href="{{url('delete_file',$files->id)}}">Delete</a>
+                        {{-- <a onclick="return confirm('Are you sure to delete this document?')" class="btn btn-danger f-2" style="margin-left: 10px;" href="">Delete</a> --}}
                     </div>
                    
                 </div>
                 <div >
                   
                   {{-- <iframe src="{{ asset('storage/' .$selected->path) }}" style="width: 100%; height: 400px; border: none;"></iframe> --}}
-                  <object data="{{ Storage::url('documents/' . $selected->fileName) }}" type="{{ Storage::mimeType('documents/' . $selected->fileName) }}" style="width: 100%; height: 400px;">
-                    <p>Your browser does not support embedded content.</p>
-                </object>
+                  @if ($data['media']->mime_type === 'application/pdf')
+                  <embed src="data:application/pdf;base64,{{base64_encode($data['contents'])}}" type="application/pdf" width="100%" height="600px">
+              @elseif (strpos($data['media']->mime_type, 'image/') === 0)
+                  <img src="data:{{$data['media']->mime_type}};base64,{{base64_encode($data['contents'])}}" alt="Image">
+              @elseif ($data['media']->mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+                  {!! $data['contents'] !!}
+              @elseif($data['media']->mime_type==='text/plain')
+                  {{$data['contents']}}
+              @elseif($data['media']->mime_type==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                  {!! $data['htmlContent']!!}
+               @elseif ($data['media']->mime_type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
+                  {!! $data['htmlContent'] !!}
+              
+              @else
+                  <p>Unsupported media type</p>
+              @endif
                 
                 
                   </div>
@@ -450,6 +531,13 @@
   <!-- Custom js for this page-->
   <script src="spica/js/dashboard.js"></script>
   <!-- End custom js for this page-->
+
+  <script>
+    document.querySelector('.bg-primary').addEventListener('change', function() {
+        window.location.href = this.options[this.selectedIndex].value;
+    });
+</script>
+
 </body>
 
 </html>

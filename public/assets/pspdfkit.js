@@ -1,0 +1,1 @@
+// mkdir public/assets && cp -R ./node_modules/pspdfkit/dist/ ./public/assets/
