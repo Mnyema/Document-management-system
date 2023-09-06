@@ -26,7 +26,12 @@
   .position-relative:hover .custom-dropdown-content {
       display: block !important;
   }
-
+  .nav-item1.active {
+  background-color: rgb(1, 44, 130);
+}
+.nav-item1.hover {
+  background-color: rgb(1, 44, 130);
+}
   .custom-dropdown-content {
     position: absolute;
     top: 100%;
@@ -57,11 +62,17 @@
   .divide{
     display: flex;
   }
+  .nav-item2{
+    margin-left: 2%;
+  }
+  .nav-item2:hover {
+  background-color: #530398;
+}
 </style>
 <body>
   <div class="container-scroller d-flex">
     <!-- partial:./partials/_sidebar.html -->
-    <nav class="sidebar sidebar-offcanvas" id="sidebar">
+    <nav class="sidebar sidebar-offcanvas" id="sidebar" style="z-index: auto">
       <ul class="nav">
         <li class="nav-item sidebar-category">
           <p>Navigation</p>
@@ -91,12 +102,12 @@
             @php
                $media = $post->getFirstMedia('docs');
             @endphp
-                <li class="nav-item ">
-          <div class="position-relative">
+                <li class="nav-item nav-item1 id="file-{{ $post->id }}"">
+          <div class="position-relative" style="position:absolute;">
             <a class="nav-link custom-dropdown-toggle" href="#" role="button" id="fileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="flex-grow: 1;">
-                        <i class="mdi mdi-file-document-box-outline menu-icon"></i>
+                        <i class="mdi mdi-file menu-icon"></i>
                         <span class="menu-title">{{ pathinfo($post->getFirstMedia('docs')->file_name, PATHINFO_FILENAME) }}</span>
                     </div>
                     <span style="font-size: 20px; color: #999;">...</span>
@@ -116,12 +127,12 @@
     
                     <div class="dropdown-divider"></div>
                     <div class="link-container">
-                    <a class="dropdown-item" href="{{route('posts.show', $post->id)}}">Open File</a>
+                    <a class="dropdown-item" href="{{route('posts.show', $post->id)}}" data-id="file-{{ $post->id }}">Open File</a>
                     {{-- href="{{ asset($files->path) }}" --}}
                     <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
                       @csrf
                       @method('DELETE')
-                      <button type="submit" class="btn">Delete</button>
+                      <button type="submit" class="btn btn-sm" style="border: none;">Delete</button>
                       </form>
                     </div>
                 </div>
@@ -293,7 +304,7 @@
                 <div class="input-group">
                     <input type="text" class="form-control" name="q" placeholder="Search here" required>
                     <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit"><i class="mdi mdi-file-find" style="font-size: 20px"></i></button>
+                        <button class="btn btn-primary btn-sm" type="submit"><i class="mdi mdi-magnify" style="font-size: 20px"></i></button>
                     </div>
                 </div>
             </form>
@@ -307,41 +318,45 @@
  
   <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
     <i class="mdi mdi-file-find menu-icon"></i>
-    <span class="menu-title">Search Results: {{ request()->input('q') }}</span>
+    <span class="menu-title">Search Results <i class="mdi mdi-chevron-down"></i> {{ request()->input('q') }}</span>
     <i class="menu-arrow"></i>
   </a>
   <div class="collapse" id="auth">
+    
     <ul class="nav flex-column sub-menu">
       @foreach ($results['fileNameResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
       @endforeach
      
       @foreach ($results['docxResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
      @endforeach
      
      @foreach ($results['xlsxResults'] as $result)
-     <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
+     <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
     @endforeach
 
       @foreach ($results['pptxResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
         @endforeach
      
         @foreach ($results['txtResults'] as $result)
-        <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+        <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
     @endforeach
       
     @foreach ($results['pdfResults'] as $result)
-    <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+    <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
 @endforeach
-    </ul>
-  </div>
+</ul>
+</div> 
  {{-- @else 
  <li class="nav-item">No result</li> --}}
+
 @endif
-            </div>      </li>
+  </div>  
+      </li>
           </ul>
+
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item nav-profile dropdown">
               
@@ -390,7 +405,7 @@
       <div class="main-panel">
         <div class="content-wrapper">
           @if(session()->has('message'))
-                    <div class="alert alert-success mdi mdi-check-circle-outline">
+                    <div class="alert alert-success mdi mdi-checkbox-marked-circle">
                       <button type="button" class="close" data-dismiss="alert">
                         x
                       </button>
@@ -406,14 +421,14 @@
                     <i class="mdi mdi-book-open-page-variant" style="margin-right: 10px;"></i>
                     <h4 class="card-title f-6" style="flex: 3;">{{ pathinfo($data['media']->file_name, PATHINFO_FILENAME) }}</h4>
                     <div style="flex: 1; display: flex; justify-content: flex-end;">
-                      <a class="btn btn-info f-2" style="margin-left: 10px;" href="{{ route('download',  ['id' => $data['media']->id])}}"><i class="mdi mdi-arrow-down-bold-circle"></i></a>
+                      <a class="btn btn-info btn-sm" style="margin-left: 10px;" href="{{ route('download',  ['id' => $data['media']->id])}}"><i class="mdi mdi-download" style="font-size: 20px"></i></a>
 
                       <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
                         @csrf
                         @method('DELETE')
                          
-                        <button type="submit" style=" width:auto; height:auto; align-items:center; background-color:red;" class=" "  >
-                          <i class="mdi mdi-delete input-group-append" style="font-size: 40px; color:white; margin-right:5%; margin-left:2px; margin-bottom:0%"></i> 
+                        <button type="submit" style="border:none; width:auto; height:auto; align-items:center; background-color:red;" class="btn-sm"  >
+                          <i class="mdi mdi-delete input-group-append" style="color:white; margin-right:0; margin-left:2px; margin-bottom:0%"></i> 
                         </button>
                         </form>
 
@@ -533,9 +548,13 @@
   <!-- End custom js for this page-->
 
   <script>
-    document.querySelector('.bg-primary').addEventListener('change', function() {
-        window.location.href = this.options[this.selectedIndex].value;
-    });
+    document.querySelectorAll('.dropdown-item[data-id]').forEach(function(link) {
+  link.addEventListener('click', function() {
+    var id = this.getAttribute('data-id');
+    document.getElementById(id).classList.add('active');
+  });
+});
+
 </script>
 
 </body>

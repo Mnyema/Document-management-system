@@ -20,10 +20,21 @@
   <link rel="shortcut icon" href="spica/images/favicon.png" />
 </head>
 <style>
+    .nav-item1.active {
+  background-color: rgb(1, 44, 130);
+}
+.nav-item1:hover{
+  background-color: rgb(1, 44, 130);
+}
   .position-relative:hover .custom-dropdown-content {
       display: block !important;
   }
-
+  .nav-item2{
+    margin-left: 2%;
+  }
+  .nav-item2:hover {
+  background-color: #530398;
+}
   .custom-dropdown-content {
     position: absolute;
     top: 100%;
@@ -69,7 +80,7 @@
           </a>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item active">
           <a class="nav-link" href="{{route('posts.create')}}">
             <button class="btn bg-danger btn-sm menu-title"><i class="mdi mdi-upload"></i>  Upload Files</button>
           </a>
@@ -81,12 +92,12 @@
         </li>
         @foreach($posts as $post)
         @if($post->hasMedia('docs'))
-        <li class="nav-item ">
+        <li class="nav-item  nav-item1 id="file-{{ $post->id }}"">
           <div class="position-relative">
             <a class="nav-link custom-dropdown-toggle" href="#" role="button" id="fileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="flex-grow: 1;">
-                        <i class="mdi mdi-file-document-box-outline menu-icon"></i>
+                        <i class="mdi mdi-file menu-icon"></i>
                         <span class="menu-title">{{ pathinfo($post->getFirstMedia('docs')->file_name, PATHINFO_FILENAME) }}</span>
                     </div>
                     <span style="font-size: 20px; color: #999;">...</span>
@@ -106,12 +117,12 @@
     
                     <div class="dropdown-divider"></div>
                     <div class="link-container">
-                      <a class="dropdown-item" href="{{route('posts.show', $post->id)}}">Open File</a>
+                      <a class="dropdown-item" href="{{route('posts.show', $post->id)}}" data-id="file-{{ $post->id }}">Open File</a>
                       {{-- <a  onclick="return confirm('Are you sure to delete this document?')" class="dropdown-item btn btn-danger" href="{{route('posts.destroy', $post->id)}}">Delete File</a>  --}}
                       <form method="POST" action="{{route('posts.destroy', $post->id)}}" onsubmit="return confirm('Are you sure');" class="dropdown-item btn btn-danger">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn">Delete</button>
+                        <button type="submit" class="btn btn-sm" style="border: none;">Delete</button>
                         </form>
                       </div>
                 </div>
@@ -276,11 +287,11 @@
                 <div class="input-group">
                     <input type="text" class="form-control" name="q" placeholder="Search here" required>
                     <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit"><i class="mdi mdi-file-find" style="font-size: 20px"></i></button>
+                        <button class="btn btn-primary btn-sm" style="border: none;" type="submit"><i class="mdi mdi-magnify" style="font-size: 20px"></i></button>
                     </div>
                 </div>
             </form>
-            <div class="bg-primary">
+            <div class="bg-primary"style="position:absolute; z-index:9999">
             @if (session()->has('search_results'))
             @php
                 $results = session('search_results');
@@ -290,33 +301,33 @@
  
   <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
     <i class="mdi mdi-file-find menu-icon"></i>
-    <span class="menu-title">Search Results: {{ request()->input('q') }}</span>
+    <span class="menu-title">Search Results <i class="mdi mdi-chevron-down"></i> {{ request()->input('q') }}</span>
     <i class="menu-arrow"></i>
   </a>
   <div class="collapse" id="auth">
     <ul class="nav flex-column sub-menu">
       @foreach ($results['fileNameResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result->id)}}"> {{ $result->file_name }}</a></li>
       @endforeach
      
       @foreach ($results['docxResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
      @endforeach
      
      @foreach ($results['xlsxResults'] as $result)
-     <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
+     <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['cell_value'])) !!}</a></li>
     @endforeach
 
       @foreach ($results['pptxResults'] as $result)
-      <li class="nav-item"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
+      <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!}</a></li>
         @endforeach
      
         @foreach ($results['txtResults'] as $result)
-        <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+        <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
     @endforeach
       
     @foreach ($results['pdfResults'] as $result)
-    <li class="nav-item"> <a class="nav-link" href="p{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
+    <li class="nav-item2"> <a class="nav-link" href="{{route('posts.show', $result['id'])}}"> {{ $result['file_name'] }}: {!! str_replace(request()->input('q'), "<strong>" . request()->input('q') . "</strong>", htmlspecialchars_decode($result['sentence'])) !!} </a></li>
 @endforeach
     </ul>
   </div>
@@ -377,7 +388,7 @@
                 <div class="card-body">
                     
                     @if(session()->has('message'))
-                    <div class="alert alert-success mdi mdi-check-circle-outline">
+                    <div class="alert alert-success mdi mdi-checkbox-marked-circle">
                       <button type="button" class="close" data-dismiss="alert">
                         x
                       </button>
@@ -392,8 +403,8 @@
                         <input type="file" class="form-control" id="path" name="file" placeholder="file"  required>
                       </div>
                       
-                      <button type="submit" class="btn btn-primary mr-2">Upload</button>
-                      <button class="btn btn-light"><a class="nav-link" href="">Cancel</a></button>
+                      <button type="submit" class="btn btn-primary btn-sm mr-2">Upload</button>
+                      <button class="btn btn-light btn-sm"><a class="nav-link" href="">Cancel</a></button>
                     </form>
                   </div>
               </div>
@@ -466,7 +477,15 @@
     <!-- page-body-wrapper ends -->
   </div>
   <!-- container-scroller -->
+  <script>
+    document.querySelectorAll('.dropdown-item[data-id]').forEach(function(link) {
+  link.addEventListener('click', function() {
+    var id = this.getAttribute('data-id');
+    document.getElementById(id).classList.add('active');
+  });
+});
 
+  </script>
   <!-- base:js -->
   <script src="spica/vendors/js/vendor.bundle.base.js"></script>
   <!-- endinject -->
